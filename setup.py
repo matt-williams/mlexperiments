@@ -85,14 +85,14 @@ class InstallCommands(setuptools.Command):
         self.install_oblige()
 
 setuptools.setup(
-    name='ml_experiments',
+    name='mlexperiments',
     version='0.0.1',
     author='Matt Williams',
     author_email='matwilliams@hotmail.com',
     description='Machine learning experiments',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/matt-williams/ml_experiments',
+    url='https://github.com/matt-williams/mlexperiments',
     packages=setuptools.find_packages(),
     install_requires=[
         'pydrive',
