@@ -42,14 +42,14 @@ class InstallCommands(setuptools.Command):
         return '{}{}-{}'.format(get_abbr_impl(), get_impl_ver(), get_abi_tag())
 
     def get_package_file(self, package):
-        package_files = glob.glob('{}/{}-*-{}-*.whl'.format(Path.home(), package, get_platform_str()))
+        package_files = glob.glob('{}/{}-*-{}-*.whl'.format(Path.home(), package, self.get_platform_str()))
         return package_files[-1] if package_files else None
 
     def install_pytorch(self):
         try:
             import torch
         except ImportError:
-            platform = get_platform_str()
+            platform = self.get_platform_str()
             accelerator = 'cu80' if os.path.exists('/opt/bin/nvidia-smi') else 'cpu'
             self.system('pip install -q http://download.pytorch.org/whl/{}/torch-0.3.0.post4-{}-linux_x86_64.whl torchvision'.format(accelerator, platform))
 
@@ -59,7 +59,7 @@ class InstallCommands(setuptools.Command):
         except ImportError:
             self.system('apt-get update > /dev/null')
             self.system('apt-get install libboost-all-dev libsdl2-dev libbz2-dev libgtk2.0-dev > /dev/null')
-            package_file = get_package_file('vizdoom')
+            package_file = self.get_package_file('vizdoom')
             if package_file:
                 self.system('pip install {}'.format(package_file))
             else:
@@ -73,7 +73,7 @@ class InstallCommands(setuptools.Command):
         except ImportError:
             self.system('apt-get update > /dev/null')
             self.system('apt-get install libfltk1.3-dev libxft-dev libjpeg-dev libpng-dev zlib1g-dev > /dev/null')
-            package_file = get_package_file('oblige')
+            package_file = self.get_package_file('oblige')
             if package_file:
                 self.system('pip install {}'.format(package_file))
             else:
