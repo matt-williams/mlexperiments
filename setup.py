@@ -37,19 +37,17 @@ class InstallCommands(setuptools.Command):
             if status:
                 raise OSError(status, cmd)
 
-    def get_platform_str(self):
-        from wheel.pep425tags import get_abbr_impl, get_impl_ver, get_abi_tag
-        return '{}{}-{}'.format(get_abbr_impl(), get_impl_ver(), get_abi_tag())
-
     def get_package_file(self, package):
-        package_files = glob.glob('{}/{}-*-{}-*.whl'.format(Path.home(), package, self.get_platform_str()))
+        from wheel.pep425tags import get_abbr_impl, get_impl_ver
+        package_files = glob.glob('{}/{}-*-{}{}-*.whl'.format(Path.home(), package, get_abbr_impl(), get_impl_ver()))
         return package_files[-1] if package_files else None
 
     def install_pytorch(self):
         try:
             import torch
         except ImportError:
-            platform = self.get_platform_str()
+            from wheel.pep425tags import get_abbr_impl, get_impl_ver, get_abi_tag
+            platform = '{}{}-{}'.format(get_abbr_impl(), get_impl_ver(), get_abi_tag())
             accelerator = 'cu80' if os.path.exists('/opt/bin/nvidia-smi') else 'cpu'
             self.system('pip install -q http://download.pytorch.org/whl/{}/torch-0.3.0.post4-{}-linux_x86_64.whl torchvision'.format(accelerator, platform))
 
