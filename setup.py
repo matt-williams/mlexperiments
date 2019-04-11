@@ -94,7 +94,7 @@ setuptools.setup(
     description='Machine learning experiments',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/matt-williams/ml-experiments',
+    url='https://github.com/matt-williams/ml_experiments',
     packages=setuptools.find_packages(),
     install_requires=[
         'pydrive',
