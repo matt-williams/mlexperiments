@@ -15,7 +15,7 @@ class develop(_develop):  # pylint: disable=invalid-name
     sub_commands = _develop.sub_commands + [('InstallCommands', None)]
 
     def run(self):
-        super(_develop, self).run()
+        super(develop, self).run()
         for cmd_name in self.get_sub_commands():
             self.run_command(cmd_name)
 
