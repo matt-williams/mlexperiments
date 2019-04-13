@@ -5,10 +5,10 @@ import os
 import stat
 
 class GDrive:
-    def __init__():
+    def __init__(self):
         self.authenticate()
 
-    def authenticate():
+    def authenticate(self):
         try:
             from google.colab import auth
             auth.authenticate_user()
