@@ -1,6 +1,5 @@
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
-from google.colab import auth
 from oauth2client.client import GoogleCredentials
 import os
 import stat
@@ -10,8 +9,13 @@ class GDrive:
         self.authenticate()
 
     def authenticate():
-        auth.authenticate_user()
-        self.gauth = GoogleAuth()
+        try:
+            from google.colab import auth
+            auth.authenticate_user()
+            self.gauth = GoogleAuth()
+        except ImportError:
+            gauth = GoogleAuth()
+            gauth.LocalWebserverAuth()
         gauth.credentials = GoogleCredentials.get_application_default()
 
     def load(self, files, dest_path='', force=True, required=True, permissions=None):
