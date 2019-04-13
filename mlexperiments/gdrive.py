@@ -12,11 +12,12 @@ class GDrive:
         try:
             from google.colab import auth
             auth.authenticate_user()
-            self.gauth = GoogleAuth()
-            self.gauth.credentials = GoogleCredentials.get_application_default()
+            gauth = GoogleAuth()
+            gauth.credentials = GoogleCredentials.get_application_default()
         except ImportError:
-            self.gauth = GoogleAuth()
-            self.gauth.LocalWebserverAuth()
+            gauth = GoogleAuth()
+            gauth.LocalWebserverAuth()
+        return gauth
 
     def load(self, files, dest_path='', force=True, required=True, permissions=None):
         gauth = self.authenticate()
