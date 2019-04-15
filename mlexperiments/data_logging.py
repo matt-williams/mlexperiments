@@ -13,7 +13,7 @@ class Logger:
 
     def log(self, *args):
         self.logs.append(tuple(args))
-            
+
     def get(self):
         def generator():
             ii = 0
@@ -54,7 +54,7 @@ class Viewer:
     def get_view(self, logs):
         result, scratch = self.init_func()
         return View(logs, self.func, result, scratch)
-        
+
 class View:
     def __init__(self, logs, func, view={}, scratch=None):
         self.logs = logs.get()
@@ -181,7 +181,7 @@ class BatchAggregatedViewer(Viewer):
                     result[label][ii] = totals[label][ii] / scratch["count"][ii]
 
         super(BatchAggregatedViewer, self).__init__(func, init_func)
-        
+
 class LastEpochViewer(Viewer):
     def __init__(self, filter_prefix, epoch_column, columns, labels):
         filter_prefix = tuple(filter_prefix)
@@ -234,7 +234,7 @@ class EpochGraph:
         epoch_range = (epoch_range[0], max(epoch_range[0], epoch_range[1]))
         epoch_range = (min(epoch_range[0], last_epoch), min(epoch_range[1], last_epoch))
         return epoch_range
-        
+
     def draw(self, ax=None):
         if ax is None:
             fig, ax = plt.subplots(1, 1)
@@ -267,7 +267,7 @@ class EpochGraph:
                         epoch, label_data = zip(*combined)
                         ax.plot(epoch, label_data, c=color)
                 if len(data2[label]) > 0 and not isinstance(combined[0][1], (list, tuple)) and (self.yscale != 'log' or min(data2[label]) > 0):
-                    ax.axhline(min(data2[label]), c=color, dashes=[5, 5])        
+                    ax.axhline(min(data2[label]), c=color, dashes=[5, 5])
         return ax
 
 class EpochLRGraph:
@@ -287,7 +287,7 @@ class EpochLRGraph:
         epoch_range = (self.epoch_range[0] if self.epoch_range[0] >= 0 else max(last_epoch + 1 + self.epoch_range[0], 0), self.epoch_range[1] if self.epoch_range[1] >= 0 else max(last_epoch + 1 + self.epoch_range[1], 0))
         epoch_range = (epoch_range[0], max(epoch_range[0] + 1, epoch_range[1]))
         return epoch_range
-        
+
     def draw(self, ax=None):
         if ax is None:
             fig, ax = plt.subplots(1, 1)
