@@ -238,14 +238,14 @@ class Upsample(nn.Sequential):
 
 class ConvDownsample(nn.Sequential):
     def __init__(self, ch, resolution, scale):
-        super(Downsample, self).__init__(
+        super(ConvDownsample, self).__init__(
             nn.Conv2d(ch, ch, 4, padding=tuple([1 + math.ceil(x / scale) % 2 for x in resolution]), stride=2),
             nn.LeakyReLU(inplace=True),
         )
 
 class ConvUpsample(nn.Sequential):
     def __init__(self, ch, resolution, scale):
-        super(Upsample, self).__init__(
+        super(ConvUpsample, self).__init__(
             nn.ConvTranspose2d(ch, ch, 4, padding=1, stride=2),
             Crop2d([math.ceil(x / scale) for x in resolution]),
             nn.LeakyReLU(inplace=True),
