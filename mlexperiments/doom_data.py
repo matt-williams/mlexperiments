@@ -60,7 +60,7 @@ class DoomWadGenerator:
         self.id = id
         self.config = config
         self.seed = seed
-        
+
     def __call__(self):
         generator = DoomLevelGenerator(self.seed)
         generator.set_config(self.config)
@@ -92,7 +92,7 @@ class DoomMapGenerator:
 class DoomGameGenerator:
     BUTTONS = [vz.Button.MOVE_FORWARD, vz.Button.MOVE_BACKWARD, vz.Button.MOVE_LEFT, vz.Button.MOVE_RIGHT, vz.Button.TURN_LEFT, vz.Button.TURN_RIGHT, vz.Button.ATTACK, vz.Button.USE]
     VARIABLES = [vz.GameVariable.POSITION_X, vz.GameVariable.POSITION_Y, vz.GameVariable.POSITION_Z, vz.GameVariable.ANGLE]
-    
+
     def __init__(self, config_file, map_generator=None, resolution=vz.ScreenResolution.RES_320X240, format=vz.ScreenFormat.RGB24, buttons=BUTTONS, depth=True, labels=True):
         super(DoomGameGenerator, self).__init__()
         self.config_file = config_file
@@ -114,23 +114,25 @@ class DoomGameGenerator:
         game.set_labels_buffer_enabled(self.labels)
 
         game.set_render_hud(False)
+        game.set_render_messages(False)
         game.set_render_crosshair(False)
         game.set_render_weapon(False)
         game.set_render_decals(False)
         game.set_render_particles(False)
         game.set_render_effects_sprites(False)
         game.set_render_corpses(False)
+        game.set_render_screen_flashes(False)
         game.set_window_visible(False)
 
         game.set_available_buttons(self.buttons)
         game.set_available_game_variables(DoomGameGenerator.VARIABLES)
         game.set_episode_timeout(2**31 - 1)
-    
+
         sample_map = self.map_generator()
-        
+
         game.set_doom_scenario_path(sample_map["wad_fname"])
         game.set_doom_map(sample_map["map_name"])
-    
+
         game.init()
 
         sample = {"seed": sample_map["seed"], "map_name": sample_map["map_name"], "game": game}
@@ -140,7 +142,7 @@ class DoomActionGenerator:
     def __init__(self, action_prob=0.3):
         super(DoomActionGenerator, self).__init__()
         self.action_prob = action_prob
-    
+
     def __call__(self, num_available):
         return [random.uniform(0, 1) < self.action_prob for ii in range(num_available)]
 
@@ -151,7 +153,7 @@ class DoomStateGenerator:
         self.action_generator = action_generator or DoomActionGenerator()
         self.advance = advance
         self.timeout = timeout
-        
+
         self.game = None
 
     def __call__(self, new=False, action=None):
@@ -170,22 +172,22 @@ class DoomStateGenerator:
                         action = self.action_generator(self.game.get_available_buttons_size())
                     self.game.set_action(action)
                     self.game.advance_action(self.advance)
-        
+
                 state = self.game.get_state()
                 if not state or (self.timeout and state.tic > self.timeout):
                     new = True
                     continue
-        
+
                 dead = self.game.is_player_dead()
                 x = self.game.get_game_variable(vz.GameVariable.POSITION_X)
                 y = self.game.get_game_variable(vz.GameVariable.POSITION_Y)
                 z = self.game.get_game_variable(vz.GameVariable.POSITION_Z)
                 angle = self.game.get_game_variable(vz.GameVariable.ANGLE)
                 tic = state.tic / self.advance
-            
+
                 action = action or [0] * self.game.get_available_buttons_size()
                 action = np.array([int(x) for x in action], dtype=np.uint8)
-            
+
                 sample = {
                     "seed": self.seed,
                     "map_name": self.map_name,
@@ -218,7 +220,7 @@ class BoringStateFilter():
 
         self.states = []
         self.boring_states = 0
-        
+
     def __call__(self, new=False, action=None):
         new2 = False
         actions = []
@@ -367,7 +369,7 @@ class DifferenceWrapper:
         old_sample = self.buffer[0]
         seed, map_name, new = old_sample["seed"], old_sample["map_name"], old_sample["new"]
         old_xyz, old_angle, old_tic = old_sample["xyz"], old_sample["angle"], old_sample["tic"]
-        dead, new_xyz, new_angle, new_tic = new_sample["dead"], new_sample["xyz"], new_sample["angle"], new_sample["tic"] 
+        dead, new_xyz, new_angle, new_tic = new_sample["dead"], new_sample["xyz"], new_sample["angle"], new_sample["tic"]
         actions = [sample["action"] for sample in self.buffer[:self.next_delta]]
         sample = {
             "seed": seed,
@@ -461,7 +463,7 @@ class DoomDataset(Dataset):
                 num_samples -= 1
         except StopIteration:
             pass
-        self.files = os.listdir(self.path)        
+        self.files = os.listdir(self.path)
 
     def remove(self, num_samples=100):
         for file in random.sample(self.files, num_samples):
