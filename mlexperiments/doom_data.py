@@ -55,7 +55,7 @@ def labels_to_instances(labels, labels_buffer):
 
 
 class DoomWadGenerator:
-    def __init__(self, id=0, config={"length": "single"}, seed=None):
+    def __init__(self, id=0, config={"length": "single", "darkness": "none"}, seed=None):
         super(DoomWadGenerator, self).__init__()
         self.id = id
         self.config = config
