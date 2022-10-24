@@ -55,7 +55,7 @@ def labels_to_instances(labels, labels_buffer):
 
 
 class DoomWadGenerator:
-    def __init__(self, id=0, config={"length": "single", "secrets": "none", "misc": 1, "darkness": "none"}, seed=None):
+    def __init__(self, id=0, config={"length": "single", "secrets": "none", "misc": 1, "darkness": "none", "doors": "none", "keys": "none", "switches": "none"}, seed=None):
         super(DoomWadGenerator, self).__init__()
         self.id = id
         self.config = config
@@ -138,19 +138,57 @@ class DoomGameGenerator:
         sample = {"seed": sample_map["seed"], "map_name": sample_map["map_name"], "game": game}
         return sample
 
-class DoomActionGenerator:
+class DoomRandomActionGenerator:
     def __init__(self, action_prob=0.3):
-        super(DoomActionGenerator, self).__init__()
+        super(DoomRandomActionGenerator, self).__init__()
         self.action_prob = action_prob
 
-    def __call__(self, num_available):
-        return [random.uniform(0, 1) < self.action_prob for ii in range(num_available)]
+    def __call__(self, state, available_actions):
+        return [random.uniform(0, 1) < self.action_prob for ii in range(len(available_actions))]
+
+class DoomFocussedActionGenerator:
+    def __init__(self):
+        super(DoomFocussedActionGenerator, self).__init__()
+        self.use_wait = 0
+        self.use_cooldown = 0
+
+    def __call__(self, state, available_actions):
+        floor = np.flip(np.cumprod(np.flip(state.labels_buffer == 1, 0), 0), 0)
+        target_y = np.argmax(np.max(floor, 1, keepdims=True))
+        if target_y != 0:
+            x_run_ends = np.where(np.diff(floor[target_y]))[0] + 1
+            x_runs = np.diff(np.hstack((0, x_run_ends, floor.shape[1])))
+            if len(x_runs) > 1:
+                target_x = np.sum(x_runs[:np.argmax(x_runs[1::2]) * 2 + 1]) + np.max(x_runs[1::2]) / 2 - floor.shape[1] / 2
+            else:
+                target_x = 0
+            target_y = floor.shape[0] - target_y
+        else:
+            target_x = 0
+        left = target_x <= -16
+        right = target_x >= 16
+        forward = target_y > 0
+        use = False
+        if not left and not right and not forward:
+            if self.use_cooldown == 0 or self.use_wait > 0:
+                forward = True
+                use = True
+            else:  
+                left = True
+        self.use_cooldown = 60 if use else max(self.use_cooldown - 1, 0)
+        self.use_wait = 15 if use else max(self.use_wait - 1, 0)
+        actions = [0] * len(available_actions)
+        actions[available_actions.index(vz.Button.TURN_LEFT)] = 1 if left else 0
+        actions[available_actions.index(vz.Button.TURN_RIGHT)] = 1 if right else 0
+        actions[available_actions.index(vz.Button.MOVE_FORWARD)] = 1 if forward else 0
+        actions[available_actions.index(vz.Button.USE)] = 1 if use else 0
+        return actions
 
 class DoomStateGenerator:
     def __init__(self, game_generator, action_generator=None, advance=1, timeout=None):
         super(DoomStateGenerator, self).__init__()
         self.game_generator = game_generator
-        self.action_generator = action_generator or DoomActionGenerator()
+        self.action_generator = action_generator or DoomRandomActionGenerator()
         self.advance = advance
         self.timeout = timeout
 
@@ -169,7 +207,7 @@ class DoomStateGenerator:
                     action = None
                 else:
                     if not action:
-                        action = self.action_generator(self.game.get_available_buttons_size())
+                        action = self.action_generator(self.game.get_state(), self.game.get_available_buttons())
                     self.game.set_action(action)
                     self.game.advance_action(self.advance)
 
