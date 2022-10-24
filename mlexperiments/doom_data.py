@@ -147,8 +147,10 @@ class DoomRandomActionGenerator:
         return [random.uniform(0, 1) < self.action_prob for ii in range(len(available_actions))]
 
 class DoomFocussedActionGenerator:
-    def __init__(self):
+    def __init__(self, use_wait_timeout=15, use_wait_cooldown=60):
         super(DoomFocussedActionGenerator, self).__init__()
+        self.use_wait_timeout = use_wait_timeout
+        self.use_cooldown_timeout = use_cooldown_timeout
         self.use_wait = 0
         self.use_cooldown = 0
 
@@ -175,8 +177,8 @@ class DoomFocussedActionGenerator:
                 use = True
             else:  
                 left = True
-        self.use_cooldown = 60 if use else max(self.use_cooldown - 1, 0)
-        self.use_wait = 15 if use else max(self.use_wait - 1, 0)
+        self.use_wait = self.use_wait_timeout if use else max(self.use_wait - 1, 0)
+        self.use_cooldown = self.use_cooldown_timeout if use else max(self.use_cooldown - 1, 0)
         actions = [0] * len(available_actions)
         actions[available_actions.index(vz.Button.TURN_LEFT)] = 1 if left else 0
         actions[available_actions.index(vz.Button.TURN_RIGHT)] = 1 if right else 0
