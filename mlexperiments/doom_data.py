@@ -147,7 +147,7 @@ class DoomRandomActionGenerator:
         return [random.uniform(0, 1) < self.action_prob for ii in range(len(available_actions))]
 
 class DoomFocussedActionGenerator:
-    def __init__(self, use_wait_timeout=15, use_wait_cooldown=60):
+    def __init__(self, use_wait_timeout=15, use_cooldown_timeout=60):
         super(DoomFocussedActionGenerator, self).__init__()
         self.use_wait_timeout = use_wait_timeout
         self.use_cooldown_timeout = use_cooldown_timeout
