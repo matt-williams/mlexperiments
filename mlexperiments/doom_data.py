@@ -147,14 +147,19 @@ class DoomRandomActionGenerator:
         return [random.uniform(0, 1) < self.action_prob for ii in range(len(available_actions))]
 
 class DoomFocussedActionGenerator:
-    def __init__(self, use_wait_timeout=15, use_cooldown_timeout=60):
+    def __init__(self, use_wait_timeout=16, use_cooldown_timeout=64, not_moving_timeout=8):
         super(DoomFocussedActionGenerator, self).__init__()
         self.use_wait_timeout = use_wait_timeout
         self.use_cooldown_timeout = use_cooldown_timeout
+        self.not_moving_timeout = not_moving_timeout
         self.use_wait = 0
         self.use_cooldown = 0
+        self.last_x = math.nan
+        self.last_y = math.nan
+        self.last_z = math.nan
+        self.not_moving_duration = 0
 
-    def __call__(self, state, available_actions):
+    def __call__(self, x, y, z, state, available_actions):
         floor = np.flip(np.cumprod(np.flip(state.labels_buffer == 1, 0), 0), 0)
         target_y = np.argmax(np.max(floor, 1, keepdims=True))
         if target_y != 0:
@@ -167,22 +172,43 @@ class DoomFocussedActionGenerator:
             target_y = floor.shape[0] - target_y
         else:
             target_x = 0
-        left = target_x <= -16
-        right = target_x >= 16
         forward = target_y > 0
+        back = False
+        left = False
+        right = False
+        strafe_left = False
         use = False
-        if not left and not right and not forward:
+        if abs(x - self.last_x) >= 8 or abs(y - self.last_y) >= 8 or abs(z - self.last_z) >= 8:
+            self.not_moving_duration = 0
+            moving = True
+        else:
+            self.not_moving_duration += 1            
+            moving = self.not_moving_duration < self.not_moving_timeout
+        if not forward or not moving:
             if self.use_cooldown == 0 or self.use_wait > 0:
                 forward = True
                 use = True
-            else:  
+            else:
+                forward = False
+                use = False
+                back = True
                 left = True
-        self.use_wait = self.use_wait_timeout if use else max(self.use_wait - 1, 0)
+                right = False
+                strafe_left = True
+        else:
+           left = target_x <= -16
+           right = target_x >= 16
+        self.use_wait = self.use_wait_timeout if use and self.use_cooldown_timeout == 0 else max(self.use_wait - 1, 0)
         self.use_cooldown = self.use_cooldown_timeout if use else max(self.use_cooldown - 1, 0)
+        self.last_x = x
+        self.last_y = y
+        self.last_z = z
         actions = [0] * len(available_actions)
         actions[available_actions.index(vz.Button.TURN_LEFT)] = 1 if left else 0
         actions[available_actions.index(vz.Button.TURN_RIGHT)] = 1 if right else 0
         actions[available_actions.index(vz.Button.MOVE_FORWARD)] = 1 if forward else 0
+        actions[available_actions.index(vz.Button.MOVE_BACKWARD)] = 1 if back else 0
+        actions[available_actions.index(vz.Button.MOVE_LEFT)] = 1 if strafe_left else 0
         actions[available_actions.index(vz.Button.USE)] = 1 if use else 0
         return actions
 
@@ -209,7 +235,7 @@ class DoomStateGenerator:
                     action = None
                 else:
                     if not action:
-                        action = self.action_generator(self.game.get_state(), self.game.get_available_buttons())
+                        action = self.action_generator(self.game.get_game_variable(vz.GameVariable.POSITION_X), self.game.get_game_variable(vz.GameVariable.POSITION_Y), self.game.get_game_variable(vz.GameVariable.POSITION_Z), self.game.get_state(), self.game.get_available_buttons())
                     self.game.set_action(action)
                     self.game.advance_action(self.advance)
 
@@ -549,7 +575,6 @@ class DoomDataset(Dataset):
             sample[subimage_name] = subimage
             x += w
         return sample
-
 
 from torch.autograd import Variable
 
